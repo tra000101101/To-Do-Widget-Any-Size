@@ -6,6 +6,8 @@ name: Custom Android Build (Travis)
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
 
 jobs:
   build:
