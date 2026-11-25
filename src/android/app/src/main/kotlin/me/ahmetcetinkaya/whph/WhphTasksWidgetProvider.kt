@@ -62,21 +62,17 @@ class WhphTasksWidgetProvider : AppWidgetProvider() {
     try {
       val views = RemoteViews(context.packageName, R.layout.whph_tasks_widget)
 
-      // Compact mode: hide the header and shrink padding at small sizes
+      // Header (title + refresh) always visible; date label never shown.
+      // Tighter padding at small sizes.
       val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
       val widthDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 250)
       val heightDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 110)
       val density = context.resources.displayMetrics.density
+      views.setViewVisibility(R.id.tasks_widget_header, android.view.View.VISIBLE)
+      views.setViewVisibility(R.id.tasks_widget_timestamp, android.view.View.GONE)
       if (heightDp < 100 || widthDp < 120) {
-        views.setViewVisibility(R.id.tasks_widget_header, android.view.View.GONE)
         val pad = (4 * density).toInt()
         views.setViewPadding(R.id.tasks_widget_container, pad, pad, pad, pad)
-      } else {
-        views.setViewVisibility(R.id.tasks_widget_header, android.view.View.VISIBLE)
-        views.setViewVisibility(
-          R.id.tasks_widget_timestamp,
-          if (widthDp < 180) android.view.View.GONE else android.view.View.VISIBLE,
-        )
       }
 
       // Bind the widget to the RemoteViewsService
