@@ -1,0 +1,93 @@
+name: Custom Android Build (Travis)
+
+# Builds a personal APK with the resizable widget changes.
+# Run it from the Actions tab: "Custom Android Build (Travis)" -> Run workflow.
+# The APK installs alongside the F-Droid version as "WHPH Custom".
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Initialize Submodules
+        uses: ./.github/actions/setup-repository
+
+      - name: Setup Flutter with FVM
+        uses: ./.github/actions/setup-fvm
+        with:
+          cache-key-suffix: "android"
+
+      - name: Exclude test-only plugins from release builds
+        run: fvm flutter config --explicit-package-dependencies
+
+      - name: Install Flutter Dependencies
+        uses: ./.github/actions/install-flutter-deps
+
+      - name: Install RPS and generate code
+        run: |
+          fvm dart pub global activate rps
+          rps gen
+
+      - name: Install OpenJDK 17
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y openjdk-17-jdk-headless
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Remove non-Android platforms
+        run: |
+          cd src
+          rm -rf ios linux macos web windows
+
+      - name: Make it a separate app (installs beside the original)
+        run: |
+          sed -i 's/applicationId = "me.ahmetcetinkaya.whph"/applicationId = "me.ahmetcetinkaya.whph.custom"/' src/android/app/build.gradle
+          for f in src/android/app/src/main/res/values*/strings.xml; do
+            sed -i -E 's#(<string name="app_name"[^>]*>)[^<]*(</string>)#\1WHPH Custom\2#' "$f"
+          done
+          grep -n "applicationId" src/android/app/build.gradle
+
+      - name: Setup signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          KS=src/android/app/whph-release.keystore
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "Using saved signing key from repository secrets"
+            echo "$KEYSTORE_BASE64" | base64 --decode > "$KS"
+            PASS="$KEYSTORE_PASSWORD"
+          else
+            echo "::warning::No KEYSTORE_BASE64 secret set. Generating a one-off key; future builds will need an uninstall before installing."
+            PASS="customwhph"
+            keytool -genkeypair -v -keystore "$KS" -alias whph -keyalg RSA -keysize 2048 \
+              -validity 10000 -storepass "$PASS" -keypass "$PASS" -dname "CN=WHPH Custom"
+          fi
+          cat > src/android/key.properties << EOF
+          storePassword=$PASS
+          keyPassword=$PASS
+          keyAlias=whph
+          storeFile=whph-release.keystore
+          EOF
+
+      - name: Build APK
+        run: |
+          cd src
+          fvm flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: whph-custom-apk
+          path: src/build/app/outputs/flutter-apk/app-release.apk
+          compression-level: 0
