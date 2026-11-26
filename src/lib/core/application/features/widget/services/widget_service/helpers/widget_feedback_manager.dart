@@ -36,10 +36,12 @@ class WidgetFeedbackManager {
         HomeWidget.updateWidget(
           name: _tasksWidgetName,
           androidName: _tasksWidgetName,
+          qualifiedAndroidName: 'me.ahmetcetinkaya.whph.$_tasksWidgetName',
         ),
         HomeWidget.updateWidget(
           name: _habitsWidgetName,
           androidName: _habitsWidgetName,
+          qualifiedAndroidName: 'me.ahmetcetinkaya.whph.$_habitsWidgetName',
         ),
       ]);
 
@@ -68,10 +70,12 @@ class WidgetFeedbackManager {
         HomeWidget.updateWidget(
           name: _tasksWidgetName,
           androidName: _tasksWidgetName,
+          qualifiedAndroidName: 'me.ahmetcetinkaya.whph.$_tasksWidgetName',
         ),
         HomeWidget.updateWidget(
           name: _habitsWidgetName,
           androidName: _habitsWidgetName,
+          qualifiedAndroidName: 'me.ahmetcetinkaya.whph.$_habitsWidgetName',
         ),
       ]);
     } catch (e) {

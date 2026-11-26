@@ -64,6 +64,7 @@ class WidgetService {
       await HomeWidget.updateWidget(
         name: _tasksWidgetName,
         androidName: _tasksWidgetName,
+        qualifiedAndroidName: 'me.ahmetcetinkaya.whph.$_tasksWidgetName',
       );
     } catch (e) {
       Logger.error('Error updating tasks widget: $e');
@@ -82,6 +83,7 @@ class WidgetService {
       await HomeWidget.updateWidget(
         name: _habitsWidgetName,
         androidName: _habitsWidgetName,
+        qualifiedAndroidName: 'me.ahmetcetinkaya.whph.$_habitsWidgetName',
       );
     } catch (e) {
       Logger.error('Error updating habits widget: $e');
