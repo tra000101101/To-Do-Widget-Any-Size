@@ -64,37 +64,36 @@ jobs:
         run: |
           sed -i 's/applicationId = "me.ahmetcetinkaya.whph"/applicationId = "me.ahmetcetinkaya.whph.custom"/' src/android/app/build.gradle
           for f in src/android/app/src/main/res/values*/strings.xml; do
-            sed -i -E 's#(<string name="app_name"[^>]*>)[^<]*(</string>)#\1WHPH Custom\2#' "$f"
+            sed -i -E 's#(<string name="app_name"[^>]*>)[^<]*(</string>)#\1WHPH Custom b${{ github.run_number }}\2#' "$f"
           done
           grep -n "applicationId" src/android/app/build.gradle
 
       - name: Setup signing key
         env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         run: |
-          KS=src/android/app/whph-release.keystore
-          if [ -n "$KEYSTORE_BASE64" ]; then
-            echo "Using saved signing key from repository secrets"
-            echo "$KEYSTORE_BASE64" | base64 --decode > "$KS"
+          if [ -n "$KEYSTORE_PASSWORD" ] && [ -f src/android/app/custom-release.p12 ]; then
+            echo "Using the permanent signing key"
+            STORE=custom-release.p12
             PASS="$KEYSTORE_PASSWORD"
           else
-            echo "::warning::No KEYSTORE_BASE64 secret set. Generating a one-off key; future builds will need an uninstall before installing."
+            echo "::warning::KEYSTORE_PASSWORD secret not set. Using a one-off key; you will need to uninstall before installing this build."
+            STORE=whph-release.keystore
             PASS="customwhph"
-            keytool -genkeypair -v -keystore "$KS" -alias whph -keyalg RSA -keysize 2048 \
+            keytool -genkeypair -keystore "src/android/app/$STORE" -alias whph -keyalg RSA -keysize 2048 \
               -validity 10000 -storepass "$PASS" -keypass "$PASS" -dname "CN=WHPH Custom"
           fi
           cat > src/android/key.properties << EOF
           storePassword=$PASS
           keyPassword=$PASS
           keyAlias=whph
-          storeFile=whph-release.keystore
+          storeFile=$STORE
           EOF
 
       - name: Build APK
         run: |
           cd src
-          fvm flutter build apk --release
+          fvm flutter build apk --release --build-number=$((10000 + ${{ github.run_number }}))
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
