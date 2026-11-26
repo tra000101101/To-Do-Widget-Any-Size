@@ -9,6 +9,7 @@ import 'helpers/widget_background_callback_handler.dart';
 import 'helpers/widget_toggle_helper.dart';
 import 'helpers/widget_data_aggregator.dart';
 import 'helpers/widget_feedback_manager.dart';
+import 'helpers/widget_pending_completions.dart';
 
 // Re-export the background callback for HomeWidget registration
 export 'helpers/widget_background_callback_handler.dart' show widgetBackgroundCallback;
@@ -51,6 +52,8 @@ class WidgetService {
   /// Update only the tasks widget.
   Future<void> updateTasksWidget() async {
     try {
+      // Apply widget taps queued natively before reading task data.
+      await WidgetPendingCompletions.process(_mediator);
       final widgetData = await _dataAggregator.getWidgetData();
       final jsonData = jsonEncode(widgetData.toJson());
 
@@ -70,6 +73,8 @@ class WidgetService {
   /// Update only the habits widget.
   Future<void> updateHabitsWidget() async {
     try {
+      // Apply widget taps queued natively before reading task data.
+      await WidgetPendingCompletions.process(_mediator);
       final widgetData = await _dataAggregator.getWidgetData();
       final jsonData = jsonEncode(widgetData.toJson());
 

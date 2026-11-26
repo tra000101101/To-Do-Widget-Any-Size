@@ -17,12 +17,14 @@ class TasksRemoteViewsFactory(private val context: Context) :
   }
 
   private var tasks: org.json.JSONArray? = null
+  private var pendingIds: Set<String> = emptySet()
 
   override fun onCreate() {
     // Data is loaded in onDataSetChanged
   }
 
   override fun onDataSetChanged() {
+    pendingIds = WidgetTapReceiver.pendingTaskIds(context)
     val widgetData = HomeWidgetPlugin.getData(context)
     val dataString = widgetData?.getString("widget_data", null)
 
@@ -52,7 +54,7 @@ class TasksRemoteViewsFactory(private val context: Context) :
       val task = currentTasks.getJSONObject(position)
       val taskId = task.optString("id", "")
       val title = task.optString("title", "Unknown task")
-      val isCompleted = task.optBoolean("isCompleted", false)
+      val isCompleted = task.optBoolean("isCompleted", false) || pendingIds.contains(taskId)
 
       views.setTextViewText(R.id.task_title, title)
 

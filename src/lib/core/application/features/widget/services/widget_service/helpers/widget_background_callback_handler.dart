@@ -4,8 +4,6 @@ import 'package:mediatr/mediatr.dart';
 import 'package:acore/acore.dart';
 import 'package:whph/presentation/ui/shared/services/abstraction/i_sound_manager_service.dart';
 import 'package:whph/core/domain/shared/utils/logger.dart';
-import 'package:whph/core/application/features/tasks/queries/get_task_query.dart';
-import 'package:whph/core/application/features/tasks/commands/save_task_command.dart';
 import 'package:whph/core/application/features/habits/queries/get_habit_query.dart';
 import 'package:whph/core/application/features/habits/queries/get_list_habit_records_query.dart';
 import 'package:whph/core/application/features/habits/commands/toggle_habit_completion_command.dart';
@@ -15,6 +13,7 @@ import 'package:whph/presentation/ui/shared/services/app_bootstrap_service.dart'
 import 'package:whph/presentation/ui/shared/services/background_translation_service.dart';
 import 'package:whph/main.dart' as app_main;
 import '../widget_service.dart';
+import 'widget_pending_completions.dart';
 
 /// Background callback function for HomeWidget interactive widgets.
 /// This function is called when a widget is clicked and performs the actual completion logic.
@@ -67,7 +66,10 @@ FutureOr<void> widgetBackgroundCallback(Uri? data) async {
 
       switch (action) {
         case 'toggle_task':
-          await _backgroundToggleTask(mediator, container, itemId);
+          // Widget taps only ever complete a task. The native receiver already
+          // queued the id, ticked the row and played the sound.
+          await WidgetPendingCompletions.process(mediator);
+          await WidgetPendingCompletions.completeTask(mediator, itemId);
           break;
         case 'toggle_habit':
           await backgroundToggleHabit(mediator, container, itemId);
@@ -90,55 +92,6 @@ FutureOr<void> widgetBackgroundCallback(Uri? data) async {
   } catch (e, stackTrace) {
     Logger.error('Error in widget background callback: $e');
     Logger.debug('Stack trace: $stackTrace');
-  }
-}
-
-/// Background task toggle function
-Future<void> _backgroundToggleTask(Mediator mediator, IContainer container, String taskId) async {
-  try {
-    final taskResult = await mediator.send<GetTaskQuery, GetTaskQueryResponse>(
-      GetTaskQuery(id: taskId),
-    );
-
-    final newCompletedAt = taskResult.completedAt == null ? DateTime.now().toUtc() : null;
-    await mediator.send<SaveTaskCommand, SaveTaskCommandResponse>(
-      SaveTaskCommand(
-        id: taskResult.id,
-        title: taskResult.title,
-        description: taskResult.description,
-        priority: taskResult.priority,
-        plannedDate: taskResult.plannedDate,
-        deadlineDate: taskResult.deadlineDate,
-        estimatedTime: taskResult.estimatedTime,
-        completedAt: newCompletedAt,
-        parentTaskId: taskResult.parentTaskId,
-        order: taskResult.order,
-        plannedDateReminderTime: taskResult.plannedDateReminderTime,
-        plannedDateReminderCustomOffset: taskResult.plannedDateReminderCustomOffset,
-        deadlineDateReminderTime: taskResult.deadlineDateReminderTime,
-        deadlineDateReminderCustomOffset: taskResult.deadlineDateReminderCustomOffset,
-        recurrenceType: taskResult.recurrenceType,
-        recurrenceInterval: taskResult.recurrenceInterval,
-        recurrenceStartDate: taskResult.recurrenceStartDate,
-        recurrenceEndDate: taskResult.recurrenceEndDate,
-        recurrenceCount: taskResult.recurrenceCount,
-        recurrenceParentId: taskResult.recurrenceParentId,
-        recurrenceConfiguration: taskResult.recurrenceConfiguration,
-      ),
-    );
-
-    if (newCompletedAt != null) {
-      try {
-        final soundManagerService = container.resolve<ISoundManagerService>();
-        soundManagerService.playTaskCompletion();
-      } catch (e) {
-        Logger.warning('Error playing completion sound: $e');
-      }
-    }
-  } catch (e, stackTrace) {
-    Logger.error('Error toggling task $taskId: $e');
-    Logger.debug('Stack trace: $stackTrace');
-    rethrow;
   }
 }
 

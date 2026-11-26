@@ -153,9 +153,7 @@ class WhphTasksWidgetProvider : AppWidgetProvider() {
       // Set up item click template - the PendingIntent template targets
       // HomeWidgetBackgroundReceiver
       // and the fillInIntent in the factory will provide the specific data URI.
-      val bgIntent =
-        Intent(context, es.antonborri.home_widget.HomeWidgetBackgroundReceiver::class.java)
-      bgIntent.action = "es.antonborri.home_widget.action.BACKGROUND"
+      val bgIntent = Intent(context, WidgetTapReceiver::class.java)
 
       val pendingIntentTemplate =
         PendingIntent.getBroadcast(

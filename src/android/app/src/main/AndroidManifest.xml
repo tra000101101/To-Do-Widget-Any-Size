@@ -125,6 +125,8 @@
         android:resource="@xml/whph_habits_widget_info"
       />
     </receiver>
+    <!-- Widget checkbox taps: instant feedback, then hand-off to HomeWidget -->
+    <receiver android:name=".WidgetTapReceiver" android:exported="false" />
     <!-- HomeWidget Background Receiver and Service for interactive widgets -->
     <receiver
       android:name="es.antonborri.home_widget.HomeWidgetBackgroundReceiver"
