@@ -9,6 +9,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -99,3 +102,13 @@ jobs:
           name: whph-custom-apk
           path: src/build/app/outputs/flutter-apk/app-release.apk
           compression-level: 0
+
+      - name: Publish APK as a release (direct phone download)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp src/build/app/outputs/flutter-apk/app-release.apk whph-custom.apk
+          gh release create "build-${{ github.run_number }}" whph-custom.apk \
+            --repo "${{ github.repository }}" --target "${{ github.sha }}" \
+            --title "WHPH Custom build ${{ github.run_number }}" \
+            --notes "Install whph-custom.apk on your phone." --latest
